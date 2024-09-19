@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リズムゲーム</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    canvas {
+      background-color: #fff;
+      border: 2px solid #000;
+      margin-bottom: 20px;
+    }
+    #controls {
+      display: flex;
+      justify-content: space-between;
+      width: 200px;
+    }
+    button {
+      padding: 10px;
+      font-size: 18px;
+      margin: 10px;
+    }
+    #score, #high-score {
+      font-size: 24px;
+      margin: 10px;
+    }
+    .control-btn {
+      width: 50px;
+      height: 50px;
+      font-size: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="gameCanvas" width="500" height="500"></canvas>
+  <div id="score">スコア: 0</div>
+  <div id="high-score">ハイスコア: 0</div>
+  <button id="startButton">スタート</button>
+  
+  <div id="controls">
+    <button class="control-btn" id="upBtn">↑</button>
+    <button class="control-btn" id="downBtn">↓</button>
+    <button class="control-btn" id="leftBtn">←</button>
+    <button class="control-btn" id="rightBtn">→</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const highScoreDisplay = document.getElementById('high-score');
+    const startButton = document.getElementById('startButton');
+    
+    const upBtn = document.getElementById('upBtn');
+    const downBtn = document.getElementById('downBtn');
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+
+    let circles = [];
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let gameInterval, circleSpeed = 1.5, gameTime = 0;
+    let directions = ['up', 'down', 'left', 'right'];
+    let hitZoneRadius = 40;  // ヒットボックスの半径
+    let circleSpeedIncrement = 0.2;
+
+    highScoreDisplay.textContent = `ハイスコア: ${highScore}`;
+
+    // ランダムな方向から円を生成
+    class Circle {
+      constructor(direction) {
+        this.radius = 20;
+        this.speed = circleSpeed;
+        this.setDirection(direction);
+      }
+
+      setDirection(direction) {
+        switch (direction) {
+          case 'up':
+            this.x = canvas.width / 2;
+            this.y = -this.radius;
+            this.dx = 0;
+            this.dy = this.speed;
+            break;
+          case 'down':
+            this.x = canvas.width / 2;
+            this.y = canvas.height + this.radius;
+            this.dx = 0;
+            this.dy = -this.speed;
+            break;
+          case 'left':
+            this.x = -this.radius;
+            this.y = canvas.height / 2;
+            this.dx = this.speed;
+            this.dy = 0;
+            break;
+          case 'right':
+            this.x = canvas.width + this.radius;
+            this.y = canvas.height / 2;
+            this.dx = -this.speed;
+            this.dy = 0;
+            break;
+        }
+      }
+
+      update() {
+        this.x += this.dx;
+        this.y += this.dy;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#00f';
+        ctx.fill();
+        ctx.closePath();
+      }
+
+      // ヒットボックス内に到達したかどうか
+      isInHitZone() {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
+        return distance <= hitZoneRadius;
+      }
+
+      // 玉の中心がヒットボックスに近づいた時のスコア判定
+      getHitScore() {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
+        if (distance < 10) {
+          return 300; // just
+        } else if (distance < 20) {
+          return 100; // good
+        } else if (distance < 40) {
+          return 50; // normal
+        }
+        return 0; // miss
+      }
+    }
+
+    function spawnCircle() {
+      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+      circles.push(new Circle(randomDirection));
+    }
+
+    function updateCircles() {
+      circles.forEach((circle, index) => {
+        circle.update();
+        if (circle.isInHitZone()) {
+          // ヒット判定処理を実行
+        }
+      });
+    }
+
+    function drawCircles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // ヒットゾーンの描画
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, hitZoneRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.closePath();
+
+      circles.forEach(circle => circle.draw());
+    }
+
+    function hitCircle(direction) {
+      if (circles.length === 0) return;
+
+      const circle = circles[0]; // 先頭の円をチェック
+      if ((circle.dx > 0 && direction === 'right') || 
+          (circle.dx < 0 && direction === 'left') ||
+          (circle.dy > 0 && direction === 'down') || 
+          (circle.dy < 0 && direction === 'up')) {
+        
+        const points = circle.getHitScore();
+        score += points;
+        scoreDisplay.textContent = `スコア: ${score}`;
+        circles.shift(); // 先頭の円を消す
+      }
+    }
+
+    function startGame() {
+      score = 0;
+      circles = [];
+      circleSpeed = 1.5;
+      gameTime = 0;
+      scoreDisplay.textContent = `スコア: ${score}`;
+      clearInterval(gameInterval);
+      
+      gameInterval = setInterval(() => {
+        gameTime += 1;
+        if (gameTime % 60 === 0) circleSpeed += circleSpeedIncrement; // 速度を時間とともに増やす
+        spawnCircle();
+        updateCircles();
+        drawCircles();
+      }, 1000 / 60);
+    }
+
+    upBtn.addEventListener('click', () => hitCircle('up'));
+    downBtn.addEventListener('click', () => hitCircle('down'));
+    leftBtn.addEventListener('click', () => hitCircle('left'));
+    rightBtn.addEventListener('click', () => hitCircle('right'));
+    
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') hitCircle('up');
+      if (e.key === 'ArrowDown') hitCircle('down');
+      if (e.key === 'ArrowLeft') hitCircle('left');
+      if (e.key === 'ArrowRight') hitCircle('right');
+    });
+
+    startButton.addEventListener('click', startGame);
+  </script>
+
+</body>
+</html>
