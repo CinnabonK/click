@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>リズムゲーム - 矢印中心向かい改良版</title>
+  <title>リズムゲーム - 改善版</title>
   <style>
     body {
       margin: 0;
@@ -31,13 +31,6 @@
     }
     #difficultySelect {
       display: none;
-    }
-    .hit-effect {
-      animation: hit-flash 0.5s ease;
-    }
-    @keyframes hit-flash {
-      from { opacity: 1; }
-      to { opacity: 0; }
     }
   </style>
 </head>
@@ -72,44 +65,42 @@
     let lives = 3;
     let isGameOver = false;
     let gameInterval;
-    let arrowSpawnInterval = 1000;
+    let arrowSpawnInterval = 1500;
     let hitZoneRadius = 40;
     let directions = ['up', 'down', 'left', 'right'];
     let arrowSpeed = 2;
     let pause = false;
+    let activeKey = null;
 
     class Arrow {
       constructor(direction) {
         this.direction = direction;
-        this.setInitialPosition(direction);
         this.isHit = false;
+        this.setInitialPosition();
         this.calculateAngle();
       }
 
-      setInitialPosition(direction) {
+      // 矢印の初期位置を指定された四方向に固定
+      setInitialPosition() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-
-        switch (direction) {
-          case 'up':
-            this.x = Math.random() * canvas.width;
-            this.y = 0;
-            break;
-          case 'down':
-            this.x = Math.random() * canvas.width;
-            this.y = canvas.height;
-            break;
-          case 'left':
-            this.x = 0;
-            this.y = Math.random() * canvas.height;
-            break;
-          case 'right':
-            this.x = canvas.width;
-            this.y = Math.random() * canvas.height;
-            break;
+        
+        if (this.direction === 'up') {
+          this.x = centerX;
+          this.y = -200;
+        } else if (this.direction === 'down') {
+          this.x = centerX;
+          this.y = 700;
+        } else if (this.direction === 'left') {
+          this.x = -200;
+          this.y = centerY;
+        } else if (this.direction === 'right') {
+          this.x = 700;
+          this.y = centerY;
         }
       }
 
+      // 中央に向かう角度を計算
       calculateAngle() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
@@ -140,6 +131,7 @@
         ctx.restore();
       }
 
+      // ヒットボックス内に入ったかチェック
       isInHitZone() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
@@ -147,6 +139,7 @@
         return distance <= hitZoneRadius;
       }
 
+      // ヒットゾーン内のスコア判定
       getHitScore() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
@@ -162,6 +155,7 @@
       }
     }
 
+    // 矢印の生成関数
     function spawnArrow() {
       const randomDirection = directions[Math.floor(Math.random() * directions.length)];
       arrows.push(new Arrow(randomDirection));
@@ -171,26 +165,31 @@
       arrows.forEach((arrow, index) => {
         arrow.update();
 
+        // 矢印が中央のヒットゾーンに入ったか確認し、正しいキーが押されたかチェック
         if (arrow.isInHitZone()) {
-          arrow.isHit = true;
-          const points = arrow.getHitScore();
-          if (points > 0) {
-            combo++;
-            score += points + combo * 10;
-            comboDisplay.textContent = `コンボ: ${combo}`;
-          } else {
-            combo = 0;
-            lives--;
-            if (lives <= 0) {
-              gameOver();
+          if (activeKey === arrow.direction) {
+            const points = arrow.getHitScore();
+            if (points > 0) {
+              combo++;
+              score += points + combo * 10;
+              comboDisplay.textContent = `コンボ: ${combo}`;
+            } else {
+              resetCombo(); // コンボをリセット
+              lives--;
+              if (lives <= 0) {
+                gameOver();
+              }
             }
+            scoreDisplay.textContent = `スコア: ${score}`;
+            arrows.splice(index, 1); // 矢印を削除
+          } else if (activeKey !== null && activeKey !== arrow.direction) {
+            resetCombo(); // 間違ったキーが押されたらコンボリセット
           }
-          scoreDisplay.textContent = `スコア: ${score}`;
-          arrows.splice(index, 1); // クローン削除
         }
       });
     }
 
+    // 矢印を描画
     function drawArrows() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -203,12 +202,20 @@
       arrows.forEach(arrow => arrow.draw());
     }
 
+    // コンボをリセットする
+    function resetCombo() {
+      combo = 0;
+      comboDisplay.textContent = `コンボ: ${combo}`;
+    }
+
+    // ゲームオーバー処理
     function gameOver() {
       clearInterval(gameInterval);
       isGameOver = true;
       gameOverDisplay.style.display = 'block';
     }
 
+    // ゲーム開始処理
     function startGame() {
       isGameOver = false;
       score = 0;
@@ -222,61 +229,42 @@
       gameInterval = setInterval(() => {
         if (!pause) {
           spawnArrow();
-          updateArrows();
-          drawArrows();
         }
       }, arrowSpawnInterval);
+      gameLoop();
+    }
+
+    function gameLoop() {
+      if (!isGameOver) {
+        updateArrows();
+        drawArrows();
+        requestAnimationFrame(gameLoop);
+      }
     }
 
     startButton.addEventListener('click', () => {
-      startButton.style.display = 'none';
       difficultySelect.style.display = 'block';
     });
 
     difficulties.forEach(button => {
-      button.addEventListener('click', () => {
-        const level = button.getAttribute('data-level');
-        arrowSpeed = level === 'easy' ? 2 : level === 'normal' ? 3 : 5;
-        arrowSpawnInterval = level === 'easy' ? 1500 : level === 'normal' ? 1000 : 600;
+      button.addEventListener('click', (e) => {
+        const level = e.target.dataset.level;
+        arrowSpawnInterval = level === 'hard' ? 400 : level === 'normal' ? 800 : 1200;
         difficultySelect.style.display = 'none';
         startGame();
       });
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp') hitArrow('up');
-      if (e.key === 'ArrowDown') hitArrow('down');
-      if (e.key === 'ArrowLeft') hitArrow('left');
-      if (e.key === 'ArrowRight') hitArrow('right');
+      if (e.key === 'ArrowUp') activeKey = 'up';
+      if (e.key === 'ArrowDown') activeKey = 'down';
+      if (e.key === 'ArrowLeft') activeKey = 'left';
+      if (e.key === 'ArrowRight') activeKey = 'right';
     });
 
-    function hitArrow(direction) {
-      const arrowIndex = arrows.findIndex(arrow => arrow.direction === direction && arrow.isInHitZone());
-      if (arrowIndex !== -1) {
-        const arrow = arrows[arrowIndex];
-        const points = arrow.getHitScore();
-        score += points;
-        combo++;
-        scoreDisplay.textContent = `スコア: ${score}`;
-        comboDisplay.textContent = `コンボ: ${combo}`;
-        arrows.splice(arrowIndex, 1); // 矢印削除
-        createHitEffect();
-      } else {
-        combo = 0;
-        comboDisplay.textContent = `コンボ: ${combo}`;
-      }
-    }
-
-    function createHitEffect() {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
-      ctx.fill();
-      ctx.restore();
-    }
+    document.addEventListener('keyup', () => {
+      activeKey = null;
+    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') pause = !pause;
