@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>リズムゲーム</title>
+  <title>リズムゲーム - 矢印中心向かい改良版</title>
   <style>
     body {
       margin: 0;
@@ -72,20 +72,18 @@
     let lives = 3;
     let isGameOver = false;
     let gameInterval;
-    let gameTime = 0;
-    let difficultyLevel = 'normal';
+    let arrowSpawnInterval = 1000;
     let hitZoneRadius = 40;
     let directions = ['up', 'down', 'left', 'right'];
     let arrowSpeed = 2;
-    let arrowSpawnInterval = 1000;
     let pause = false;
 
     class Arrow {
       constructor(direction) {
         this.direction = direction;
         this.setInitialPosition(direction);
-        this.speed = arrowSpeed;
         this.isHit = false;
+        this.calculateAngle();
       }
 
       setInitialPosition(direction) {
@@ -94,34 +92,32 @@
 
         switch (direction) {
           case 'up':
-            this.x = centerX;
+            this.x = Math.random() * canvas.width;
             this.y = 0;
-            this.dx = 0;
-            this.dy = this.speed;
-            this.angle = Math.PI / 2;
             break;
           case 'down':
-            this.x = centerX;
+            this.x = Math.random() * canvas.width;
             this.y = canvas.height;
-            this.dx = 0;
-            this.dy = -this.speed;
-            this.angle = -Math.PI / 2;
             break;
           case 'left':
             this.x = 0;
-            this.y = centerY;
-            this.dx = this.speed;
-            this.dy = 0;
-            this.angle = 0;
+            this.y = Math.random() * canvas.height;
             break;
           case 'right':
             this.x = canvas.width;
-            this.y = centerY;
-            this.dx = -this.speed;
-            this.dy = 0;
-            this.angle = Math.PI;
+            this.y = Math.random() * canvas.height;
             break;
         }
+      }
+
+      calculateAngle() {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const dx = centerX - this.x;
+        const dy = centerY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        this.dx = (dx / distance) * arrowSpeed;
+        this.dy = (dy / distance) * arrowSpeed;
       }
 
       update() {
@@ -134,7 +130,6 @@
       draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
         ctx.beginPath();
         ctx.moveTo(0, -15);
         ctx.lineTo(-10, 10);
@@ -157,11 +152,11 @@
         const centerY = canvas.height / 2;
         const distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
         if (distance < 10) {
-          return 300; 
+          return 300; // Just
         } else if (distance < 20) {
-          return 100; 
+          return 100; // Good
         } else if (distance < 40) {
-          return 50; 
+          return 50; // Normal
         }
         return 0;
       }
@@ -191,7 +186,7 @@
             }
           }
           scoreDisplay.textContent = `スコア: ${score}`;
-          arrows.splice(index, 1);
+          arrows.splice(index, 1); // クローン削除
         }
       });
     }
@@ -199,40 +194,13 @@
     function drawArrows() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // 中央のヒットボックス
       ctx.beginPath();
       ctx.arc(canvas.width / 2, canvas.height / 2, hitZoneRadius, 0, Math.PI * 2);
       ctx.strokeStyle = 'yellow';
       ctx.stroke();
 
       arrows.forEach(arrow => arrow.draw());
-    }
-
-    function hitArrow(direction) {
-      const arrowIndex = arrows.findIndex(arrow => arrow.direction === direction && arrow.isInHitZone());
-      if (arrowIndex !== -1) {
-        const arrow = arrows[arrowIndex];
-        const points = arrow.getHitScore();
-        score += points;
-        combo++;
-        scoreDisplay.textContent = `スコア: ${score}`;
-        comboDisplay.textContent = `コンボ: ${combo}`;
-        arrows.splice(arrowIndex, 1);
-        createHitEffect();
-      } else {
-        combo = 0;
-        comboDisplay.textContent = `コンボ: ${combo}`;
-      }
-    }
-
-    function createHitEffect() {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
-      ctx.fill();
-      ctx.restore();
     }
 
     function gameOver() {
@@ -267,9 +235,9 @@
 
     difficulties.forEach(button => {
       button.addEventListener('click', () => {
-        difficultyLevel = button.getAttribute('data-level');
-        arrowSpeed = difficultyLevel === 'easy' ? 2 : difficultyLevel === 'normal' ? 3 : 5;
-        arrowSpawnInterval = difficultyLevel === 'easy' ? 1500 : difficultyLevel === 'normal' ? 1000 : 600;
+        const level = button.getAttribute('data-level');
+        arrowSpeed = level === 'easy' ? 2 : level === 'normal' ? 3 : 5;
+        arrowSpawnInterval = level === 'easy' ? 1500 : level === 'normal' ? 1000 : 600;
         difficultySelect.style.display = 'none';
         startGame();
       });
@@ -281,6 +249,34 @@
       if (e.key === 'ArrowLeft') hitArrow('left');
       if (e.key === 'ArrowRight') hitArrow('right');
     });
+
+    function hitArrow(direction) {
+      const arrowIndex = arrows.findIndex(arrow => arrow.direction === direction && arrow.isInHitZone());
+      if (arrowIndex !== -1) {
+        const arrow = arrows[arrowIndex];
+        const points = arrow.getHitScore();
+        score += points;
+        combo++;
+        scoreDisplay.textContent = `スコア: ${score}`;
+        comboDisplay.textContent = `コンボ: ${combo}`;
+        arrows.splice(arrowIndex, 1); // 矢印削除
+        createHitEffect();
+      } else {
+        combo = 0;
+        comboDisplay.textContent = `コンボ: ${combo}`;
+      }
+    }
+
+    function createHitEffect() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.restore();
+    }
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') pause = !pause;
