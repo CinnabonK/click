@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Scaling with Wheel</title>
+    <title>Smooth Image Transition</title>
     <style>
         body, html {
             margin: 0;
@@ -26,8 +26,8 @@
             position: absolute;
             width: 0;
             height: auto;
-            transition: width 0.1s ease-out;
-            display: none; /* 最初は全て非表示 */
+            transition: width 0.5s ease-in-out; /* スムーズな拡大縮小 */
+            display: none;
         }
     </style>
 </head>
@@ -37,7 +37,7 @@
         <img src="image1.jpg" alt="Image 1">
         <img src="image2.jpg" alt="Image 2">
         <img src="image3.jpg" alt="Image 3">
-        <!-- ... 他の画像も続ける -->
+        <!-- 他の画像も追加 -->
     </div>
 
     <script>
@@ -45,51 +45,42 @@
         const container = document.getElementById("container");
         let currentIndex = 0;
         let scale = 0;
-        let lastColor = '';
-        const colors = ["#FF5733", "#33FF57", "#3357FF", "#F0E68C", "#FF69B4", "#D2691E", "#8A2BE2", "#20B2AA"];
-        let lastDeltaY = 0; // ホイールの動きを保存
+        let isTransitioning = false; // 切り替え中かどうかを示すフラグ
 
         // 初期化: 最初の画像だけ表示
         images[currentIndex].style.display = "block";
+        images[currentIndex].style.width = "0";
 
-        // マウスホイールイベント処理
+        // マウスホイールの動作を監視
         window.addEventListener("wheel", function(event) {
-            const delta = Math.sign(event.deltaY); // 正の値（1）または負の値（-1）
-            const speedFactor = Math.abs(event.deltaY) * 0.1; // スクロール速度に応じて拡大スピードを調整
+            if (isTransitioning) return; // 切り替え中は新しいイベントを無視
 
-            // スケールの更新（マウスホイールの動きに基づく）
+            const delta = Math.sign(event.deltaY); // スクロール方向取得
+            const speedFactor = Math.abs(event.deltaY) * 0.1; // スクロール速度に応じた拡大速度
             scale += delta * speedFactor;
 
-            // 画像のスケールが0未満、または100以上にならないように制限
-            if (scale <= 0) {
-                scale = 0;
-            }
-            if (scale >= 100) {
-                scale = 100;
-            }
+            // スケールの制御: 0から100の範囲に制限
+            if (scale < 0) scale = 0;
+            if (scale > 100) scale = 100;
 
-            // 画像の拡大表示
+            // 画像のスケールを適用
             images[currentIndex].style.width = scale + "vw";
 
             // スケールが100に達したら次の画像へ切り替え
-            if (scale === 100) {
+            if (scale >= 100) {
+                isTransitioning = true; // 切り替えフラグをオン
                 images[currentIndex].style.display = "none"; // 現在の画像を非表示
-                currentIndex = (currentIndex + delta + images.length) % images.length; // 順方向・逆方向どちらにも対応
+                currentIndex = (currentIndex + 1) % images.length; // 次の画像へ
                 scale = 0; // スケールをリセット
 
-                if (!images[currentIndex]) {
-                    // 画像がない場合は単色背景を表示
-                    let newColor;
-                    do {
-                        newColor = colors[Math.floor(Math.random() * colors.length)];
-                    } while (newColor === lastColor);
-                    lastColor = newColor;
-                    container.style.backgroundColor = newColor;
-                } else {
-                    // 画像がある場合は表示
-                    container.style.backgroundColor = "#fff";
-                    images[currentIndex].style.display = "block";
-                }
+                // 次の画像を準備して表示
+                const nextImage = images[currentIndex];
+                nextImage.style.width = "0"; // 初期状態は0幅
+                nextImage.style.display = "block"; // 表示
+                setTimeout(() => {
+                    nextImage.style.width = scale + "vw"; // 0から拡大
+                    isTransitioning = false; // 切り替え完了後にフラグを解除
+                }, 10); // 短い遅延を入れてtransitionを適用
             }
         });
     </script>
