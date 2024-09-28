@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smooth Image Transition</title>
+    <title>Smooth Infinite Image Scaling</title>
     <style>
         body, html {
             margin: 0;
@@ -27,7 +27,7 @@
             width: 0;
             height: auto;
             transition: width 0.5s ease-in-out; /* スムーズな拡大縮小 */
-            display: none;
+            z-index: 1; /* デフォルトでは1 */
         }
     </style>
 </head>
@@ -45,11 +45,13 @@
         const container = document.getElementById("container");
         let currentIndex = 0;
         let scale = 0;
-        let isTransitioning = false; // 切り替え中かどうかを示すフラグ
+        let isTransitioning = false; // 切り替え中かどうかのフラグ
+        let zIndexCounter = 1; // z-indexの管理
 
         // 初期化: 最初の画像だけ表示
         images[currentIndex].style.display = "block";
         images[currentIndex].style.width = "0";
+        images[currentIndex].style.zIndex = zIndexCounter;
 
         // マウスホイールの動作を監視
         window.addEventListener("wheel", function(event) {
@@ -59,29 +61,27 @@
             const speedFactor = Math.abs(event.deltaY) * 0.1; // スクロール速度に応じた拡大速度
             scale += delta * speedFactor;
 
-            // スケールの制御: 0から100の範囲に制限
-            if (scale < 0) scale = 0;
-            if (scale > 100) scale = 100;
-
-            // 画像のスケールを適用
-            images[currentIndex].style.width = scale + "vw";
-
-            // スケールが100に達したら次の画像へ切り替え
-            if (scale >= 100) {
-                isTransitioning = true; // 切り替えフラグをオン
-                images[currentIndex].style.display = "none"; // 現在の画像を非表示
-                currentIndex = (currentIndex + 1) % images.length; // 次の画像へ
+            // スケールが0未満、または100を超えないようにする
+            if (scale < 0) {
+                scale = 0;
+                currentIndex = (currentIndex - 1 + images.length) % images.length; // 逆方向に移動
+                const prevImage = images[currentIndex];
+                zIndexCounter++;
+                prevImage.style.zIndex = zIndexCounter; // 最前面に移動
+                prevImage.style.display = "block";
+                prevImage.style.width = scale + "vw"; // 拡大の初期化
+            } else if (scale > 100) {
                 scale = 0; // スケールをリセット
-
-                // 次の画像を準備して表示
+                currentIndex = (currentIndex + 1) % images.length; // 順方向に移動
                 const nextImage = images[currentIndex];
-                nextImage.style.width = "0"; // 初期状態は0幅
-                nextImage.style.display = "block"; // 表示
-                setTimeout(() => {
-                    nextImage.style.width = scale + "vw"; // 0から拡大
-                    isTransitioning = false; // 切り替え完了後にフラグを解除
-                }, 10); // 短い遅延を入れてtransitionを適用
+                zIndexCounter++;
+                nextImage.style.zIndex = zIndexCounter; // 最前面に移動
+                nextImage.style.display = "block"; // 次の画像を表示
+                nextImage.style.width = scale + "vw"; // 拡大の初期化
             }
+
+            // 現在の画像を拡大
+            images[currentIndex].style.width = scale + "vw";
         });
     </script>
 </body>
