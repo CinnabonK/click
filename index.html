@@ -1,291 +1,97 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>リズムゲーム - 修正版</title>
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-color: #f0f0f0;
-    }
-    canvas {
-      background-color: #fff;
-      border: 2px solid #000;
-    }
-    #ui {
-      text-align: center;
-    }
-    #score, #combo, #highScore, #gameOver {
-      font-size: 32px;
-      margin: 20px;
-    }
-    #gameOver {
-      color: red;
-      display: none;
-    }
-    #difficultySelect {
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Scaling with Wheel</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        img {
+            position: absolute;
+            width: 0;
+            height: auto;
+            transition: width 0.1s ease-out;
+            display: none; /* 最初は全て非表示 */
+        }
+    </style>
 </head>
 <body>
-
-  <div id="ui">
-    <canvas id="gameCanvas" width="700" height="700"></canvas>
-    <div id="score">スコア: 0</div>
-    <div id="combo">コンボ: 0</div>
-    <div id="highScore">ハイスコア: 0</div>
-    <div id="gameOver">ゲームオーバー</div>
-    <button id="startButton">スタート</button>
-    <div id="difficultySelect">
-      <button class="difficulty" data-level="easy">Easy</button>
-      <button class="difficulty" data-level="normal">Normal</button>
-      <button class="difficulty" data-level="hard">Hard</button>
+    <div id="container">
+        <!-- 画像50個を準備 -->
+        <img src="image1.jpg" alt="Image 1">
+        <img src="image2.jpg" alt="Image 2">
+        <img src="image3.jpg" alt="Image 3">
+        <!-- ... 他の画像も続ける -->
     </div>
-  </div>
 
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
-    const comboDisplay = document.getElementById('combo');
-    const highScoreDisplay = document.getElementById('highScore');
-    const gameOverDisplay = document.getElementById('gameOver');
-    const startButton = document.getElementById('startButton');
-    const difficultySelect = document.getElementById('difficultySelect');
+    <script>
+        const images = document.querySelectorAll("img");
+        const container = document.getElementById("container");
+        let currentIndex = 0;
+        let scale = 0;
+        let lastColor = '';
+        const colors = ["#FF5733", "#33FF57", "#3357FF", "#F0E68C", "#FF69B4", "#D2691E", "#8A2BE2", "#20B2AA"];
+        let lastDeltaY = 0; // ホイールの動きを保存
 
-    let arrows = [];
-    let score = 0;
-    let combo = 0;
-    let lives = 3; // 初期ライフを3に設定
-    let isGameOver = false;
-    let gameInterval;
-    let arrowSpawnInterval = 1500;
-    let hitZoneRadius = 60;
-    let directions = ['up', 'down', 'left', 'right'];
-    let arrowSpeed = 3;
-    let pause = false;
-    let activeKey = null;
-    let highScore = localStorage.getItem('highScore') || 0;
+        // 初期化: 最初の画像だけ表示
+        images[currentIndex].style.display = "block";
 
-    highScoreDisplay.textContent = `ハイスコア: ${highScore}`;
+        // マウスホイールイベント処理
+        window.addEventListener("wheel", function(event) {
+            const delta = Math.sign(event.deltaY); // 正の値（1）または負の値（-1）
+            const speedFactor = Math.abs(event.deltaY) * 0.1; // スクロール速度に応じて拡大スピードを調整
 
-    class Arrow {
-      constructor(direction) {
-        this.direction = direction;
-        this.isHit = false;
-        this.setInitialPosition();
-        this.calculateAngle();
-      }
+            // スケールの更新（マウスホイールの動きに基づく）
+            scale += delta * speedFactor;
 
-      setInitialPosition() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        
-        if (this.direction === 'up') {
-          this.x = centerX;
-          this.y = -100;
-        } else if (this.direction === 'down') {
-          this.x = centerX;
-          this.y = canvas.height + 100;
-        } else if (this.direction === 'left') {
-          this.x = -100;
-          this.y = centerY;
-        } else if (this.direction === 'right') {
-          this.x = canvas.width + 100;
-          this.y = centerY;
-        }
-      }
-
-      calculateAngle() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const dx = centerX - this.x;
-        const dy = centerY - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        this.dx = (dx / distance) * arrowSpeed;
-        this.dy = (dy / distance) * arrowSpeed;
-      }
-
-      update() {
-        if (!this.isHit) {
-          this.x += this.dx;
-          this.y += this.dy;
-        }
-
-        // 矢印がキャンバスを超えたら削除し、ライフを減らす
-        if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
-          this.miss();
-        }
-      }
-
-      miss() {
-        if (!this.isHit) {
-          resetCombo();
-          lives--;
-          if (lives <= 0) {
-            gameOver();
-          }
-        }
-      }
-
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-
-        if (this.direction === 'up') {
-          ctx.rotate(0);
-        } else if (this.direction === 'down') {
-          ctx.rotate(Math.PI);
-        } else if (this.direction === 'left') {
-          ctx.rotate(-Math.PI / 2);
-        } else if (this.direction === 'right') {
-          ctx.rotate(Math.PI / 2);
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(0, -25);
-        ctx.lineTo(-15, 20);
-        ctx.lineTo(15, 20);
-        ctx.closePath();
-        ctx.fillStyle = '#00f';
-        ctx.fill();
-        ctx.restore();
-      }
-
-      isInHitZone() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
-        return distance <= hitZoneRadius;
-      }
-
-      getHitScore() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const distance = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
-
-        if (distance < 20) {
-          return 300 * 1.5;
-        } else if (distance < 40) {
-          return 100 * 1.2;
-        } else if (distance < 60) {
-          return 50;
-        }
-        return 0;
-      }
-    }
-
-    function spawnArrow() {
-      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-      arrows.push(new Arrow(randomDirection));
-    }
-
-    function updateArrows() {
-      arrows.forEach((arrow, index) => {
-        arrow.update();
-
-        if (arrow.isInHitZone()) {
-          if (activeKey === arrow.direction) {
-            const points = arrow.getHitScore();
-            if (points > 0) {
-              combo++;
-              score += points + combo * 10;
-              comboDisplay.textContent = `コンボ: ${combo}`;
-            } else {
-              resetCombo();
-              lives--;
-              if (lives <= 0) {
-                gameOver();
-              }
+            // 画像のスケールが0未満、または100以上にならないように制限
+            if (scale <= 0) {
+                scale = 0;
             }
-            scoreDisplay.textContent = `スコア: ${score}`;
-            arrows.splice(index, 1);
-          } else if (activeKey !== null && activeKey !== arrow.direction) {
-            resetCombo();
-          }
-        }
-      });
-    }
+            if (scale >= 100) {
+                scale = 100;
+            }
 
-    function drawArrows() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 画像の拡大表示
+            images[currentIndex].style.width = scale + "vw";
 
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2);
-      ctx.strokeStyle = 'yellow';
-      ctx.stroke();
+            // スケールが100に達したら次の画像へ切り替え
+            if (scale === 100) {
+                images[currentIndex].style.display = "none"; // 現在の画像を非表示
+                currentIndex = (currentIndex + delta + images.length) % images.length; // 順方向・逆方向どちらにも対応
+                scale = 0; // スケールをリセット
 
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 40, 0, Math.PI * 2);
-      ctx.strokeStyle = 'orange';
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 20, 0, Math.PI * 2);
-      ctx.strokeStyle = 'red';
-      ctx.stroke();
-
-      arrows.forEach(arrow => arrow.draw());
-    }
-
-    function resetCombo() {
-      combo = 0;
-      comboDisplay.textContent = `コンボ: ${combo}`;
-    }
-
-    function gameOver() {
-      isGameOver = true;
-      clearInterval(gameInterval);
-      gameOverDisplay.style.display = 'block';
-
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-        highScoreDisplay.textContent = `ハイスコア: ${highScore}`;
-      }
-    }
-
-    function startGame() {
-      // 変数のリセット
-      score = 0;
-      combo = 0;
-      lives = 3;  // ライフを再度初期化
-      isGameOver = false;
-      gameOverDisplay.style.display = 'none';
-      scoreDisplay.textContent = `スコア: ${score}`;
-      comboDisplay.textContent = `コンボ: ${combo}`;
-      arrows = [];  // 矢印リストをクリア
-
-      // ゲームループを開始
-      gameInterval = setInterval(() => {
-        if (!pause && !isGameOver) {  // ゲームオーバーを防止
-          spawnArrow();
-          updateArrows();
-          drawArrows();
-        }
-      }, 1000 / 60); // 60fps
-    }
-
-    startButton.addEventListener('click', startGame);
-
-    window.addEventListener('keydown', (e) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        activeKey = e.key.replace('Arrow', '').toLowerCase();
-      }
-    });
-
-    window.addEventListener('keyup', () => {
-      activeKey = null;
-    });
-
-  </script>
-
+                if (!images[currentIndex]) {
+                    // 画像がない場合は単色背景を表示
+                    let newColor;
+                    do {
+                        newColor = colors[Math.floor(Math.random() * colors.length)];
+                    } while (newColor === lastColor);
+                    lastColor = newColor;
+                    container.style.backgroundColor = newColor;
+                } else {
+                    // 画像がある場合は表示
+                    container.style.backgroundColor = "#fff";
+                    images[currentIndex].style.display = "block";
+                }
+            }
+        });
+    </script>
 </body>
 </html>
