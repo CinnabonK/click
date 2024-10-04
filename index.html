@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choir Practice</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Faviconの指定 -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon"> <!-- favicon設定 -->
     <style>
-        /* CSS省略（そのままでOK） */
+        /* 既存のCSSはそのまま */
     </style>
 </head>
 <body>
@@ -16,7 +16,6 @@
         <p>Click on a song to start practice</p>
     </header>
 
-    <!-- Song Cards -->
     <div class="music-card" onclick="playSong('song1')">
         <img src="images/song1.jpg" alt="Song 1">
         <h3>Song 1</h3>
@@ -30,23 +29,17 @@
         <h3>Song 3</h3>
     </div>
 
-    <!-- Music Player Scene -->
     <div id="music-player" class="music-player">
         <video id="video-player" controls>
-            <!-- MP4 file will be dynamically set here -->
+            <!-- MP4ファイルのURLは動的に設定される -->
         </video>
         <div class="controls">
-            <!-- Volume slider -->
             <label for="volume">Volume (up to 500%):</label>
             <input type="range" id="volume" min="0" max="500" value="100" oninput="adjustVolume()">
             <br>
-
-            <!-- Speed slider -->
             <label for="speed">Playback Speed:</label>
             <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" oninput="adjustSpeed()">
             <br>
-
-            <!-- Seek slider -->
             <label for="seek">Seek:</label>
             <input type="range" id="seek" min="0" value="0" oninput="adjustSeek()">
         </div>
@@ -61,67 +54,40 @@
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
-        
-        // Initialize AudioContext and other audio-related elements only after user interaction
-        let audioContext;
-        let gainNode;
-        let source;
 
-        function initializeAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();  // Initialize AudioContext
-                gainNode = audioContext.createGain();
-                source = audioContext.createMediaElementSource(videoPlayer);
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-            }
-        }
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioContext.createGain();
+        const source = audioContext.createMediaElementSource(videoPlayer);
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
         function playSong(song) {
-            // Initialize the AudioContext after user interaction
-            initializeAudioContext();
-
-            // Show player
             document.getElementById('music-player').style.display = 'flex';
-
-            // Clear previous error message
             errorMessage.textContent = '';
-
-            // Set MP4 source (CDN with CORS対応 or proxy経由)
-            videoPlayer.src = `https://your-proxy-server.com/${song}.mp4`; // ここでプロキシサーバーを使う
-
-            // Reset controls
+            videoPlayer.src = `https://your-username.github.io/your-repo-path/${song}.mp4`; // GitHub PagesのURLに変更
             volumeSlider.value = 100;
             speedSlider.value = 1;
             seekSlider.value = 0;
-            gainNode.gain.value = 1; // 音量の初期設定
+            gainNode.gain.value = 1;
             videoPlayer.playbackRate = 1;
 
-            // Set seek slider max to video duration once metadata is loaded
             videoPlayer.onloadedmetadata = function() {
                 seekSlider.max = videoPlayer.duration;
             };
 
-            // Error handling for video loading
             videoPlayer.onerror = function() {
                 errorMessage.textContent = 'Error: Unable to load the video. Please check the file or try again later.';
             };
-
-            // Resume AudioContext after user interaction (if it is in a suspended state)
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
         }
 
         function closePlayer() {
-            // Hide player
             document.getElementById('music-player').style.display = 'none';
             videoPlayer.pause();
         }
 
         function adjustVolume() {
-            let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
-            gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
+            let volumeValue = volumeSlider.value / 500;
+            gainNode.gain.value = volumeValue * 5;
         }
 
         function adjustSpeed() {
