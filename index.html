@@ -10,12 +10,18 @@
             background-color: #f7f7f7;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
         header {
             background-color: #d84527;
             padding: 20px;
             text-align: center;
             color: white;
+            width: 100%;
         }
         .music-card {
             display: inline-block;
@@ -56,6 +62,9 @@
         }
         .controls {
             margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .controls input {
             width: 300px;
@@ -67,6 +76,11 @@
             border: none;
             color: white;
             cursor: pointer;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -113,6 +127,7 @@
         </div>
 
         <button class="back-button" onclick="closePlayer()">Back to Songs</button>
+        <div id="error-message" class="error-message"></div>
     </div>
 
     <script>
@@ -120,13 +135,17 @@
         let volumeSlider = document.getElementById('volume');
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
+        let errorMessage = document.getElementById('error-message');
 
         function playSong(song) {
             // Show player
             document.getElementById('music-player').style.display = 'flex';
 
+            // Clear previous error message
+            errorMessage.textContent = '';
+
             // Set MP4 source
-            videoPlayer.src = `https://github.com/click/${song}.mp4`;  // Use the correct URL path for your MP4 files
+            videoPlayer.src = `https://github.com/CinnabonK/click/raw/main/${song}.mp4`; // Correct MP4 URL for your GitHub repository
 
             // Reset controls
             volumeSlider.value = 100;
@@ -138,6 +157,11 @@
             // Set seek slider max to video duration once metadata is loaded
             videoPlayer.onloadedmetadata = function() {
                 seekSlider.max = videoPlayer.duration;
+            };
+
+            // Error handling for video loading
+            videoPlayer.onerror = function() {
+                errorMessage.textContent = 'Error: Unable to load the video. Please check the file or try again later.';
             };
         }
 
