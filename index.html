@@ -159,11 +159,15 @@
     <section id="song1-play" class="music-play-scene">
         <h2>曲 1を再生中</h2>
         <audio id="audio1" controls>
-            <source src="https://github.com/YourRepoPath/song1.mp3" type="audio/mp3">
+            <source src="https://raw.githubusercontent.com/YourUserName/YourRepoName/main/songs/song1.mp3" type="audio/mp3">
         </audio>
         <div class="slider-container">
             <label for="speed-slider">再生速度</label>
             <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="volume-slider">音量</label>
+            <input type="range" id="volume-slider" min="0" max="5" step="0.1" value="1">
         </div>
         <div class="slider-container">
             <label for="seek-slider">再生位置</label>
@@ -175,11 +179,15 @@
     <section id="song2-play" class="music-play-scene">
         <h2>曲 2を再生中</h2>
         <audio id="audio2" controls>
-            <source src="https://github.com/YourRepoPath/song2.mp3" type="audio/mp3">
+            <source src="https://raw.githubusercontent.com/YourUserName/YourRepoName/main/songs/song2.mp3" type="audio/mp3">
         </audio>
         <div class="slider-container">
             <label for="speed-slider2">再生速度</label>
             <input type="range" id="speed-slider2" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="volume-slider2">音量</label>
+            <input type="range" id="volume-slider2" min="0" max="5" step="0.1" value="1">
         </div>
         <div class="slider-container">
             <label for="seek-slider2">再生位置</label>
@@ -191,11 +199,15 @@
     <section id="song3-play" class="music-play-scene">
         <h2>曲 3を再生中</h2>
         <audio id="audio3" controls>
-            <source src="https://github.com/YourRepoPath/song3.mp3" type="audio/mp3">
+            <source src="https://raw.githubusercontent.com/YourUserName/YourRepoName/main/songs/song3.mp3" type="audio/mp3">
         </audio>
         <div class="slider-container">
             <label for="speed-slider3">再生速度</label>
             <input type="range" id="speed-slider3" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="volume-slider3">音量</label>
+            <input type="range" id="volume-slider3" min="0" max="5" step="0.1" value="1">
         </div>
         <div class="slider-container">
             <label for="seek-slider3">再生位置</label>
@@ -222,12 +234,29 @@
             document.getElementById('audio1').playbackRate = this.value;
         });
 
+        document.getElementById('volume-slider').addEventListener('input', function() {
+            document.getElementById('audio1').volume = this.value > 1 ? 1 : this.value; // ブラウザのmax音量制限対策
+            document.getElementById('audio1').muted = this.value === 0; // スライダーが0の時はミュート
+        });
+
+        // song2の再生速度と音量スライダー
         document.getElementById('speed-slider2').addEventListener('input', function() {
             document.getElementById('audio2').playbackRate = this.value;
         });
 
+        document.getElementById('volume-slider2').addEventListener('input', function() {
+            document.getElementById('audio2').volume = this.value > 1 ? 1 : this.value; 
+            document.getElementById('audio2').muted = this.value === 0;
+        });
+
+        // song3の再生速度と音量スライダー
         document.getElementById('speed-slider3').addEventListener('input', function() {
             document.getElementById('audio3').playbackRate = this.value;
+        });
+
+        document.getElementById('volume-slider3').addEventListener('input', function() {
+            document.getElementById('audio3').volume = this.value > 1 ? 1 : this.value;
+            document.getElementById('audio3').muted = this.value === 0;
         });
     </script>
 
