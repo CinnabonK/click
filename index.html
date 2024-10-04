@@ -4,84 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choir Practice</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Faviconの指定 -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        header {
-            background-color: #d84527;
-            padding: 20px;
-            text-align: center;
-            color: white;
-            width: 100%;
-        }
-        .music-card {
-            display: inline-block;
-            width: 200px;
-            margin: 20px;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            cursor: pointer;
-        }
-        .music-card img {
-            width: 100%;
-            border-radius: 10px;
-        }
-        .music-card h3 {
-            margin: 10px 0;
-        }
-        .music-player {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            justify-content: center;
-            z-index: 10;
-        }
-        video {
-            width: 80%;
-            max-width: 800px;
-            border: 2px solid white;
-            border-radius: 10px;
-        }
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .controls input {
-            width: 300px;
-        }
-        .back-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #d84527;
-            border: none;
-            color: white;
-            cursor: pointer;
-        }
-        .error-message {
-            color: red;
-            margin-top: 10px;
-            font-size: 16px;
-        }
+        /* CSS省略（そのままでOK） */
     </style>
 </head>
 <body>
@@ -153,8 +78,8 @@
             // Clear previous error message
             errorMessage.textContent = '';
 
-            // Set MP4 source
-            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`; // 新しいCDNリンク
+            // Set MP4 source (CDN with CORS対応 or proxy経由)
+            videoPlayer.src = `https://your-proxy-server.com/${song}.mp4`; // ここでプロキシサーバーを使う
 
             // Reset controls
             volumeSlider.value = 100;
@@ -181,22 +106,18 @@
         }
 
         function adjustVolume() {
-            // スライダーの値に基づいて音量を調整
             let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
             gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
         }
 
         function adjustSpeed() {
-            // Adjust playback speed
             videoPlayer.playbackRate = speedSlider.value;
         }
 
         function adjustSeek() {
-            // Seek to specified time
             videoPlayer.currentTime = seekSlider.value;
         }
 
-        // Sync seek slider with video time
         videoPlayer.ontimeupdate = function() {
             seekSlider.value = videoPlayer.currentTime;
         };
