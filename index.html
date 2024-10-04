@@ -131,23 +131,21 @@
     </div>
 
     <script>
-        let audioContext, gainNode, source; // Moved initialization to playSong function
-        let videoPlayer = document.getElementById('video-player');
+        // AudioContext setup for volume adjustment
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioContext.createGain();
+        const videoPlayer = document.getElementById('video-player');
+        const source = audioContext.createMediaElementSource(videoPlayer);
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Initialize sliders and error messages
         let volumeSlider = document.getElementById('volume-slider');
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
 
         function playSong(song) {
-            // Initialize AudioContext on user interaction if not already initialized
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                gainNode = audioContext.createGain();
-                source = audioContext.createMediaElementSource(videoPlayer);
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-            }
-
             // Show player
             document.getElementById('music-player').style.display = 'flex';
 
@@ -173,11 +171,6 @@
             videoPlayer.onerror = function() {
                 errorMessage.textContent = 'Error: Unable to load the video. Please check the file or try again later.';
             };
-
-            // Try playing the video, catch any autoplay errors
-            videoPlayer.play().catch((error) => {
-                errorMessage.textContent = 'Error: Playback failed. Please interact with the page to allow audio playback.';
-            });
         }
 
         function closePlayer() {
