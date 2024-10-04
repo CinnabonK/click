@@ -113,7 +113,7 @@
         <div class="controls">
             <!-- Volume slider -->
             <label for="volume">Volume (up to 500%):</label>
-            <input type="range" id="volume" min="0" max="500" value="100" oninput="adjustVolume()">
+            <input type="range" id="volume-slider" min="0" max="500" value="100" oninput="adjustVolume()">
             <br>
 
             <!-- Speed slider -->
@@ -131,8 +131,16 @@
     </div>
 
     <script>
-        let videoPlayer = document.getElementById('video-player');
-        let volumeSlider = document.getElementById('volume');
+        // AudioContext setup for volume adjustment
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioContext.createGain();
+        const videoPlayer = document.getElementById('video-player');
+        const source = audioContext.createMediaElementSource(videoPlayer);
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Initialize sliders and error messages
+        let volumeSlider = document.getElementById('volume-slider');
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
@@ -145,7 +153,7 @@
             errorMessage.textContent = '';
 
             // Set MP4 source
-            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`; // 新しいCDNリンク
+            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`;
 
             // Reset controls
             volumeSlider.value = 100;
@@ -171,9 +179,10 @@
             videoPlayer.pause();
         }
 
+        // Adjust volume using AudioContext (max up to 10x)
         function adjustVolume() {
-            // Adjust volume up to 5x
-            videoPlayer.volume = Math.min(volumeSlider.value / 100, 5);
+            let volumeValue = volumeSlider.value / 1000; // Convert slider value to range 0-1
+            gainNode.gain.value = volumeValue * 10; // Set gain value to amplify up to 10x
         }
 
         function adjustSpeed() {
