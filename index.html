@@ -61,17 +61,26 @@
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
+        
+        // Initialize AudioContext and other audio-related elements only after user interaction
+        let audioContext;
+        let gainNode;
+        let source;
 
-        // AudioContextを使用して音声の音量を調整
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const gainNode = audioContext.createGain();
-
-        // ビデオプレイヤーのオーディオソースをAudioContextに接続
-        const source = audioContext.createMediaElementSource(videoPlayer);
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        function initializeAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();  // Initialize AudioContext
+                gainNode = audioContext.createGain();
+                source = audioContext.createMediaElementSource(videoPlayer);
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+            }
+        }
 
         function playSong(song) {
+            // Initialize the AudioContext after user interaction
+            initializeAudioContext();
+
             // Show player
             document.getElementById('music-player').style.display = 'flex';
 
@@ -97,6 +106,11 @@
             videoPlayer.onerror = function() {
                 errorMessage.textContent = 'Error: Unable to load the video. Please check the file or try again later.';
             };
+
+            // Resume AudioContext after user interaction (if it is in a suspended state)
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
         }
 
         function closePlayer() {
