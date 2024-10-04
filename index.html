@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <style>
+        /* スタイルは提供されたものをほぼそのまま使用 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: #d84527;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #d84527;
+            padding: 10px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .hero {
+            text-align: center;
+            margin: 80px 0;
+        }
+
+        .music-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px;
+        }
+
+        .music-card {
+            width: 300px;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .music-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .music-card h3 {
+            margin: 10px 0;
+        }
+
+        .music-card button {
+            margin-top: 15px;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #d84527;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .music-play-scene {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .play-scene-active {
+            display: flex;
+        }
+
+        audio {
+            margin-top: 20px;
+        }
+
+        .slider-container {
+            margin-top: 20px;
+        }
+
+        .slider-container label {
+            color: white;
+            display: block;
+        }
+
+        .slider-container input {
+            width: 100%;
+        }
+
+        .back-home-btn {
+            background-color: #d84527;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Music Player</h1>
+    </header>
+
+    <nav>
+        <a href="#home">ホーム</a>
+        <a href="#music">ミュージック</a>
+    </nav>
+
+    <div id="home" class="hero">
+        <h1>All Music</h1>
+    </div>
+
+    <section id="music" class="music-section">
+        <div class="music-card" onclick="playMusic('song1')">
+            <img src="images/music1.jpg" alt="Song 1">
+            <h3>曲 1</h3>
+            <button>プレイする</button>
+        </div>
+        <div class="music-card" onclick="playMusic('song2')">
+            <img src="images/music2.jpg" alt="Song 2">
+            <h3>曲 2</h3>
+            <button>プレイする</button>
+        </div>
+        <div class="music-card" onclick="playMusic('song3')">
+            <img src="images/music3.jpg" alt="Song 3">
+            <h3>曲 3</h3>
+            <button>プレイする</button>
+        </div>
+    </section>
+
+    <section id="song1-play" class="music-play-scene">
+        <h2>曲 1を再生中</h2>
+        <audio id="audio1" controls>
+            <source src="https://github.com/YourRepoPath/song1.mp3" type="audio/mp3">
+        </audio>
+        <div class="slider-container">
+            <label for="speed-slider">再生速度</label>
+            <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="seek-slider">再生位置</label>
+            <input type="range" id="seek-slider" min="0" max="100" step="1" value="0">
+        </div>
+        <button class="back-home-btn" onclick="backToHome()">HOMEに戻る</button>
+    </section>
+
+    <section id="song2-play" class="music-play-scene">
+        <h2>曲 2を再生中</h2>
+        <audio id="audio2" controls>
+            <source src="https://github.com/YourRepoPath/song2.mp3" type="audio/mp3">
+        </audio>
+        <div class="slider-container">
+            <label for="speed-slider2">再生速度</label>
+            <input type="range" id="speed-slider2" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="seek-slider2">再生位置</label>
+            <input type="range" id="seek-slider2" min="0" max="100" step="1" value="0">
+        </div>
+        <button class="back-home-btn" onclick="backToHome()">HOMEに戻る</button>
+    </section>
+
+    <section id="song3-play" class="music-play-scene">
+        <h2>曲 3を再生中</h2>
+        <audio id="audio3" controls>
+            <source src="https://github.com/YourRepoPath/song3.mp3" type="audio/mp3">
+        </audio>
+        <div class="slider-container">
+            <label for="speed-slider3">再生速度</label>
+            <input type="range" id="speed-slider3" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label for="seek-slider3">再生位置</label>
+            <input type="range" id="seek-slider3" min="0" max="100" step="1" value="0">
+        </div>
+        <button class="back-home-btn" onclick="backToHome()">HOMEに戻る</button>
+    </section>
+
+    <script>
+        function playMusic(songId) {
+            document.querySelectorAll('.music-play-scene').forEach(function(scene) {
+                scene.classList.remove('play-scene-active');
+            });
+            document.getElementById(songId + '-play').classList.add('play-scene-active');
+        }
+
+        function backToHome() {
+            document.querySelectorAll('.music-play-scene').forEach(function(scene) {
+                scene.classList.remove('play-scene-active');
+            });
+        }
+
+        document.getElementById('speed-slider').addEventListener('input', function() {
+            document.getElementById('audio1').playbackRate = this.value;
+        });
+
+        document.getElementById('speed-slider2').addEventListener('input', function() {
+            document.getElementById('audio2').playbackRate = this.value;
+        });
+
+        document.getElementById('speed-slider3').addEventListener('input', function() {
+            document.getElementById('audio3').playbackRate = this.value;
+        });
+    </script>
+
+</body>
+</html>
