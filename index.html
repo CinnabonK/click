@@ -107,7 +107,7 @@
 
     <!-- Music Player Scene -->
     <div id="music-player" class="music-player">
-        <video id="video-player" controls>
+        <video id="video-player" controls crossorigin="anonymous">
             <!-- MP4 file will be dynamically set here -->
         </video>
         <div class="controls">
@@ -131,19 +131,23 @@
     </div>
 
     <script>
-        // AudioContext setup for volume adjustment
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const gainNode = audioContext.createGain();
-        const videoPlayer = document.getElementById('video-player');
-        const source = audioContext.createMediaElementSource(videoPlayer);
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        // Initialize sliders and error messages
+        let videoPlayer = document.getElementById('video-player');
         let volumeSlider = document.getElementById('volume-slider');
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
+        
+        // Remove AudioContext due to CORS issues
+        let audioContext, gainNode, source;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioContext.createGain();
+            source = audioContext.createMediaElementSource(videoPlayer);
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+        } catch (error) {
+            console.log('AudioContext not initialized due to CORS restrictions or unsupported environment.');
+        }
 
         function playSong(song) {
             // Show player
@@ -152,7 +156,7 @@
             // Clear previous error message
             errorMessage.textContent = '';
 
-            // Set MP4 source
+            // Set MP4 source with CORS support
             videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`;
 
             // Reset controls
@@ -179,10 +183,13 @@
             videoPlayer.pause();
         }
 
-        // Adjust volume using AudioContext (max up to 10x)
+        // Adjust volume using slider (ensure value stays in [0, 1] range)
         function adjustVolume() {
-            let volumeValue = volumeSlider.value / 1000; // Convert slider value to range 0-1
-            gainNode.gain.value = volumeValue * 10; // Set gain value to amplify up to 10x
+            let volumeValue = Math.min(volumeSlider.value / 100, 1); // Clamp volume between 0 and 1
+            videoPlayer.volume = volumeValue; // Set video volume
+            if (gainNode) {
+                gainNode.gain.value = volumeValue * 10; // If gainNode exists, amplify up to 10x
+            }
         }
 
         function adjustSpeed() {
