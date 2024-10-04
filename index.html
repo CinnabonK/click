@@ -107,13 +107,13 @@
 
     <!-- Music Player Scene -->
     <div id="music-player" class="music-player">
-        <video id="video-player" controls crossorigin="anonymous">
+        <video id="video-player" controls>
             <!-- MP4 file will be dynamically set here -->
         </video>
         <div class="controls">
             <!-- Volume slider -->
             <label for="volume">Volume (up to 500%):</label>
-            <input type="range" id="volume-slider" min="0" max="500" value="100" oninput="adjustVolume()">
+            <input type="range" id="volume" min="0" max="500" value="100" oninput="adjustVolume()">
             <br>
 
             <!-- Speed slider -->
@@ -132,22 +132,19 @@
 
     <script>
         let videoPlayer = document.getElementById('video-player');
-        let volumeSlider = document.getElementById('volume-slider');
+        let volumeSlider = document.getElementById('volume');
         let speedSlider = document.getElementById('speed');
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
-        
-        // Remove AudioContext due to CORS issues
-        let audioContext, gainNode, source;
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            gainNode = audioContext.createGain();
-            source = audioContext.createMediaElementSource(videoPlayer);
-            source.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-        } catch (error) {
-            console.log('AudioContext not initialized due to CORS restrictions or unsupported environment.');
-        }
+
+        // AudioContextを使用して音声の音量を調整
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioContext.createGain();
+
+        // ビデオプレイヤーのオーディオソースをAudioContextに接続
+        const source = audioContext.createMediaElementSource(videoPlayer);
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
         function playSong(song) {
             // Show player
@@ -156,14 +153,14 @@
             // Clear previous error message
             errorMessage.textContent = '';
 
-            // Set MP4 source with CORS support
-            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`;
+            // Set MP4 source
+            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`; // 新しいCDNリンク
 
             // Reset controls
             volumeSlider.value = 100;
             speedSlider.value = 1;
             seekSlider.value = 0;
-            videoPlayer.volume = 1;
+            gainNode.gain.value = 1; // 音量の初期設定
             videoPlayer.playbackRate = 1;
 
             // Set seek slider max to video duration once metadata is loaded
@@ -183,13 +180,10 @@
             videoPlayer.pause();
         }
 
-        // Adjust volume using slider (ensure value stays in [0, 1] range)
         function adjustVolume() {
-            let volumeValue = Math.min(volumeSlider.value / 100, 1); // Clamp volume between 0 and 1
-            videoPlayer.volume = volumeValue; // Set video volume
-            if (gainNode) {
-                gainNode.gain.value = volumeValue * 10; // If gainNode exists, amplify up to 10x
-            }
+            // スライダーの値に基づいて音量を調整
+            let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
+            gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
         }
 
         function adjustSpeed() {
