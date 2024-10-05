@@ -181,8 +181,9 @@
         }
 
         function adjustVolume() {
-            // スライダーの値に基づいて音量を調整
-            let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
+        // スライダーの値に基づいて音量を調整 (0〜1の範囲で設定)
+        videoPlayer.volume = volumeSlider.value / 500; // 最大500%までの音量調整
+        }
             gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
         }
 
