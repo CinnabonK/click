@@ -153,8 +153,8 @@
             // Clear previous error message
             errorMessage.textContent = '';
 
-            // Set MP4 source
-            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`; // 新しいCDNリンク
+            // Set MP4 source using GitHub Pages link
+            videoPlayer.src = `https://CinnabonK.github.io/click/${song}.mp4`; // GitHub Pages URL
 
             // Reset controls
             volumeSlider.value = 100;
@@ -181,8 +181,8 @@
         }
 
         function adjustVolume() {
-        // スライダーの値に基づいて音量を調整 (0〜1の範囲で設定)
-        videoPlayer.volume = volumeSlider.value / 500; // 最大500%までの音量調整
+            // スライダーの値に基づいて音量を調整
+            let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
             gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
         }
 
