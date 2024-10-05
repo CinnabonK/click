@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choir Practice</title>
-    <link rel="icon" href="images/favicon.ico" type="image/x-icon"> <!-- favicon設定 -->
-<style>
+    <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f7f7f7;
@@ -92,6 +91,7 @@
         <p>Click on a song to start practice</p>
     </header>
 
+    <!-- Song Cards -->
     <div class="music-card" onclick="playSong('song1')">
         <img src="images/song1.jpg" alt="Song 1">
         <h3>Song 1</h3>
@@ -105,17 +105,23 @@
         <h3>Song 3</h3>
     </div>
 
+    <!-- Music Player Scene -->
     <div id="music-player" class="music-player">
         <video id="video-player" controls>
-            <!-- MP4ファイルのURLは動的に設定される -->
+            <!-- MP4 file will be dynamically set here -->
         </video>
         <div class="controls">
+            <!-- Volume slider -->
             <label for="volume">Volume (up to 500%):</label>
             <input type="range" id="volume" min="0" max="500" value="100" oninput="adjustVolume()">
             <br>
+
+            <!-- Speed slider -->
             <label for="speed">Playback Speed:</label>
             <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" oninput="adjustSpeed()">
             <br>
+
+            <!-- Seek slider -->
             <label for="seek">Seek:</label>
             <input type="range" id="seek" min="0" value="0" oninput="adjustSeek()">
         </div>
@@ -131,49 +137,66 @@
         let seekSlider = document.getElementById('seek');
         let errorMessage = document.getElementById('error-message');
 
+        // AudioContextを使用して音声の音量を調整
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const gainNode = audioContext.createGain();
+
+        // ビデオプレイヤーのオーディオソースをAudioContextに接続
         const source = audioContext.createMediaElementSource(videoPlayer);
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
         function playSong(song) {
+            // Show player
             document.getElementById('music-player').style.display = 'flex';
+
+            // Clear previous error message
             errorMessage.textContent = '';
-            videoPlayer.src = `https://your-username.github.io/your-repo-path/${song}.mp4`; // GitHub PagesのURLに変更
+
+            // Set MP4 source
+            videoPlayer.src = `https://cdn.jsdelivr.net/gh/CinnabonK/click/${song}.mp4`; // 新しいCDNリンク
+
+            // Reset controls
             volumeSlider.value = 100;
             speedSlider.value = 1;
             seekSlider.value = 0;
-            gainNode.gain.value = 1;
+            gainNode.gain.value = 1; // 音量の初期設定
             videoPlayer.playbackRate = 1;
 
+            // Set seek slider max to video duration once metadata is loaded
             videoPlayer.onloadedmetadata = function() {
                 seekSlider.max = videoPlayer.duration;
             };
 
+            // Error handling for video loading
             videoPlayer.onerror = function() {
                 errorMessage.textContent = 'Error: Unable to load the video. Please check the file or try again later.';
             };
         }
 
         function closePlayer() {
+            // Hide player
             document.getElementById('music-player').style.display = 'none';
             videoPlayer.pause();
         }
 
         function adjustVolume() {
-            let volumeValue = volumeSlider.value / 500;
-            gainNode.gain.value = volumeValue * 5;
+            // スライダーの値に基づいて音量を調整
+            let volumeValue = volumeSlider.value / 500; // スライダーの値を0〜1の範囲に変換
+            gainNode.gain.value = volumeValue * 5; // 最大5倍まで増幅
         }
 
         function adjustSpeed() {
+            // Adjust playback speed
             videoPlayer.playbackRate = speedSlider.value;
         }
 
         function adjustSeek() {
+            // Seek to specified time
             videoPlayer.currentTime = seekSlider.value;
         }
 
+        // Sync seek slider with video time
         videoPlayer.ontimeupdate = function() {
             seekSlider.value = videoPlayer.currentTime;
         };
